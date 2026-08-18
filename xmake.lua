@@ -7,7 +7,7 @@ package("vault")
 
     add_urls("https://github.com/HeapStacker/Vault/archive/refs/tags/v$(version).tar.gz",
              "https://github.com/HeapStacker/Vault.git")
-    add_versions("1.0.0", "88d68c37b6f492a788545b9919bd8dc9b11dce46")
+    add_versions("1.0.0", "9d37ad981494690252ce781290028e38b9ce348b")
 
     add_deps("exporter")
 
