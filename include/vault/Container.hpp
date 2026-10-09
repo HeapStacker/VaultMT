@@ -1,12 +1,12 @@
 #pragma once
 #include <memory>
 
-#include "bleky/ecs/Exporter.hpp"
+// public headers...
+#include "Concepts.hpp"
 
 namespace vault {
-
     template <typename T>
-    class EXPORTED Container {
+    class Container {
         std::unique_ptr<T> item;
         bool polymorphic{false};
 
@@ -19,7 +19,7 @@ namespace vault {
             }
 
             if (polymorphic) item = other.item->clone();
-            else item = std::make_unique<T>(*other.item);
+            else item = std::unique_ptr<T>(new T(*other.item));
         }
 
     public:
@@ -49,14 +49,6 @@ namespace vault {
             return *this;
         }
 
-        T &operator*() {
-            return get();
-        }
-
-        const T &operator*() const {
-            return get();
-        }
-
         template <typename... Args>
         T &create(Args &&...args) {
             polymorphic = false;
@@ -68,6 +60,7 @@ namespace vault {
             requires std::derived_from<ConcreteType, T>
         T &polyCreate(Args &&...args) {
             static_assert(std::has_virtual_destructor_v<T>, "Polymorphic base type T must have a virtual destructor.");
+            static_assert(IsCloneable<T>, "Polymorphic base type T must be cloneable.");
 
             polymorphic = true;
             item = std::unique_ptr<T>(new ConcreteType(std::forward<Args>(args)...));
@@ -84,7 +77,8 @@ namespace vault {
         template <typename ConcreteType>
             requires std::derived_from<ConcreteType, T>
         T &polyCopyFrom(const ConcreteType &item) {
-            static_assert(std::has_virtual_destructor_v<T>, "Polymorphic base type T must have a virtual destructor.");
+            static_assert(std::has_virtual_destructor_v<T>, "Vault: Polymorphic base type T must have a virtual destructor.");
+            static_assert(IsCloneable<T>, "Vault: Polymorphic base type T must be cloneable.");
 
             polymorphic = true;
             this->item = std::unique_ptr<T>(new ConcreteType(item));
@@ -93,12 +87,12 @@ namespace vault {
         }
 
         T &get() {
-            if (!item) BLEKY_THROW_ERROR("Item not assigned.");
+            if (!item) throw std::runtime_error("Vault: Item not assigned.");
             return *item;
         }
 
         const T &get() const {
-            if (!item) BLEKY_THROW_ERROR("Item not assigned.");
+            if (!item) throw std::runtime_error("Vault: Item not assigned.");
             return *item;
         }
 
